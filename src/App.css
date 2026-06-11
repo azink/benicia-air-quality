@@ -170,6 +170,50 @@ body {
   color: #0f172a;
 }
 
+/* ── Settings nav button ── */
+.btn-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.btn-nav:hover { border-color: #94a3b8; color: var(--text); }
+.btn-nav.active { background: #0f172a; color: white; border-color: #0f172a; }
+
+/* ── Settings page ── */
+.settings-page { padding-bottom: 40px; }
+.settings-title { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 20px; }
+.settings-card { max-width: 640px; }
+.settings-section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.settings-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+.settings-hint  { font-size: 0.78rem; color: var(--muted); max-width: 280px; line-height: 1.4; }
+.interval-toggle { display: flex; gap: 6px; flex-shrink: 0; }
+.settings-actions { display: flex; align-items: center; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.settings-saved { font-size: 0.78rem; color: #16a34a; font-weight: 500; }
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .app { padding: 16px; }

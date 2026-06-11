@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const db = require('./db');
-const { collect, startCollector } = require('./collector');
+const { collect, startCollector, rescheduleCollector, VALID_INTERVALS } = require('./collector');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -83,11 +83,35 @@ app.post('/api/collect', async (req, res) => {
   }
 });
 
+function getSetting(key, defaultValue) {
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+  return row ? row.value : defaultValue;
+}
+
+app.get('/api/settings', (req, res) => {
+  res.json({
+    pollIntervalMinutes: Number(getSetting('poll_interval_minutes', '10')),
+    validIntervals: VALID_INTERVALS,
+  });
+});
+
+app.put('/api/settings', (req, res) => {
+  const { pollIntervalMinutes } = req.body;
+  const minutes = Number(pollIntervalMinutes);
+  if (!VALID_INTERVALS.includes(minutes)) {
+    return res.status(400).json({ error: `Invalid interval. Valid options: ${VALID_INTERVALS.join(', ')} minutes.` });
+  }
+  db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('poll_interval_minutes', String(minutes));
+  rescheduleCollector(minutes);
+  res.json({ ok: true, pollIntervalMinutes: minutes });
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
-  startCollector();
+  const savedInterval = Number(getSetting('poll_interval_minutes', '10'));
+  startCollector(savedInterval);
 });

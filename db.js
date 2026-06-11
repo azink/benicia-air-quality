@@ -33,6 +33,11 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_readings_sensor_time ON readings(sensor_id, timestamp);
   CREATE INDEX IF NOT EXISTS idx_readings_timestamp   ON readings(timestamp);
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `);
 
 module.exports = db;

@@ -162,9 +162,87 @@ function SensorCard({ reading }) {
   );
 }
 
+// ── Settings page ──────────────────────────────────────────────────────────
+
+function SettingsPage() {
+  const [settings,  setSettings]  = useState(null);
+  const [interval,  setInterval]  = useState(null);
+  const [saving,    setSaving]    = useState(false);
+  const [saved,     setSaved]     = useState(false);
+  const [error,     setError]     = useState(null);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(s => { setSettings(s); setInterval(s.pollIntervalMinutes); })
+      .catch(() => setError('Could not load settings.'));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setSaved(false);
+    setError(null);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pollIntervalMinutes: interval }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSettings(s => ({ ...s, pollIntervalMinutes: data.pollIntervalMinutes }));
+      setSaved(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const dirty = settings && interval !== settings.pollIntervalMinutes;
+
+  return (
+    <div className="settings-page">
+      <h2 className="settings-title">Settings</h2>
+
+      {error && <div className="error-banner">{error}</div>}
+
+      <div className="card settings-card">
+        <div className="settings-section-title">Data Collection</div>
+
+        <div className="settings-row">
+          <div>
+            <div className="settings-label">Polling interval</div>
+            <div className="settings-hint">How often the server fetches new readings from OpenAQ and PurpleAir.</div>
+          </div>
+          <div className="interval-toggle">
+            {(settings?.validIntervals ?? []).map(v => (
+              <button
+                key={v}
+                className={`time-btn${interval === v ? ' active' : ''}`}
+                onClick={() => { setSaved(false); setInterval(v); }}
+              >
+                {v >= 60 ? `${v / 60}h` : `${v}m`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="settings-actions">
+          <button className="btn-primary" onClick={save} disabled={saving || !dirty}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          {saved && !dirty && <span className="settings-saved">Saved</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main app ───────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [page,        setPage]        = useState('dashboard');
   const [latest,      setLatest]      = useState([]);
   const [trend,       setTrend]       = useState([]);
   const [timeRange,   setTimeRange]   = useState(24);
@@ -225,18 +303,29 @@ export default function App() {
           <div className="header-subtitle">Benicia, CA — real-time monitoring</div>
         </div>
         <div className="header-right">
-          {lastUpdated && (
+          {page === 'dashboard' && lastUpdated && (
             <span className="last-updated">Updated {fmtDateTime(lastUpdated)}</span>
           )}
-          <button className="btn-primary" onClick={triggerCollect} disabled={collecting}>
-            {collecting ? 'Collecting…' : 'Collect Now'}
+          {page === 'dashboard' && (
+            <button className="btn-primary" onClick={triggerCollect} disabled={collecting}>
+              {collecting ? 'Collecting…' : 'Collect Now'}
+            </button>
+          )}
+          <button
+            className={`btn-nav${page === 'settings' ? ' active' : ''}`}
+            onClick={() => setPage(p => p === 'settings' ? 'dashboard' : 'settings')}
+            title="Settings"
+          >
+            &#9881;
           </button>
         </div>
       </header>
 
-      {error && <div className="error-banner">{error}</div>}
+      {page === 'settings' && <SettingsPage />}
 
-      {loading ? (
+      {page === 'dashboard' && error && <div className="error-banner">{error}</div>}
+
+      {page === 'dashboard' && (loading ? (
         <div className="loading">Loading air quality data…</div>
       ) : (
         <>
@@ -293,7 +382,7 @@ export default function App() {
             </div>
           )}
         </>
-      )}
+      ))}
     </div>
   );
 }

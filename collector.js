@@ -165,10 +165,25 @@ async function collect() {
   await Promise.allSettled([collectOpenAQ(), collectPurpleAir()]);
 }
 
-function startCollector() {
-  collect();
-  cron.schedule('*/10 * * * *', collect);
-  console.log('[Collector] Started — runs every 10 minutes');
+const VALID_INTERVALS = [5, 10, 15, 30, 60];
+
+let currentTask = null;
+
+function cronExpr(minutes) {
+  return minutes === 60 ? '0 * * * *' : `*/${minutes} * * * *`;
 }
 
-module.exports = { collect, startCollector };
+function rescheduleCollector(intervalMinutes) {
+  if (!VALID_INTERVALS.includes(intervalMinutes)) throw new Error(`Invalid interval: ${intervalMinutes}`);
+  if (currentTask) { currentTask.stop(); currentTask = null; }
+  currentTask = cron.schedule(cronExpr(intervalMinutes), collect);
+  console.log(`[Collector] Rescheduled — runs every ${intervalMinutes} minutes`);
+}
+
+function startCollector(intervalMinutes = 10) {
+  collect();
+  rescheduleCollector(intervalMinutes);
+  console.log(`[Collector] Started — runs every ${intervalMinutes} minutes`);
+}
+
+module.exports = { collect, startCollector, rescheduleCollector, VALID_INTERVALS };
