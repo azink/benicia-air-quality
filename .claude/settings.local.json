@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(/opt/homebrew/bin/node *)"
+      "Bash(/opt/homebrew/bin/node *)",
+      "Bash(curl *)",
+      "Read(//private/tmp/**)",
+      "Bash(node -e ' *)",
+      "Bash(git push *)"
     ]
   }
 }
